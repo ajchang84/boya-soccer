@@ -135,7 +135,7 @@ export default class Game extends PureComponent {
     Matter.World.add(world, [player, yellowDiamond, purpleDiamond]);
 
     return (
-      <View style={{flex: 1}}>
+      <ImageBackground style={{flex: 1}} source={require('./assets/images/ground.png')}>
         <GameEngine 
           ref={"gameEngine"}
           style={styles.container} 
@@ -148,18 +148,15 @@ export default class Game extends PureComponent {
               renderer: <Score />
             },
 
-            field: { position: {x: WIDTH / 2, y: HEIGHT / 2} },
-            player: { body: player, projectedMove: '', renderer: <Player /> },
-            yellowDiamond: { body: yellowDiamond, points: 10, renderer: <YellowDiamond /> },
-            purpleDiamond: { body: purpleDiamond, points: 30, renderer: <PurpleDiamond /> },
+            field: { position: {x: WIDTH / 2, y: HEIGHT / 2  }, renderer: <Field />},
+            player: { body: player, projectedMove: '', renderer: <Player />},
+            yellowDiamond: { body: yellowDiamond, points: 10, renderer: <YellowDiamond />},
+            purpleDiamond: { body: purpleDiamond, points: 30, renderer: <PurpleDiamond />},
           }}
         >
-          <ImageBackground source={require('./assets/images/ground.png')} style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-            <TouchableOpacity style={{position: 'absolute', right: 21, top: 26}} onPress={()=>this.pauseGame()}>
-              <ImageBackground style={{width: 40, height: 40}} source={require('./assets/images/rectangle4.png')} />
-            </TouchableOpacity>
-            <Field />
-          </ImageBackground>
+          <TouchableOpacity style={{position: 'absolute', right: 21, top: 26}} onPress={()=>this.pauseGame()}>
+            <ImageBackground style={{width: 40, height: 40}} source={require('./assets/images/rectangle4.png')} />
+          </TouchableOpacity>
           <StatusBar hidden={true} />
         </GameEngine>
         <Modal
@@ -169,7 +166,7 @@ export default class Game extends PureComponent {
         >
           {this.showMenu()}
         </Modal>
-      </View>
+      </ImageBackground>
     );
   }
 }

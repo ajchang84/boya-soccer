@@ -36,8 +36,10 @@ class Enemy extends React.Component {
 
 class Field extends React.Component {
   render() {
+    const x = this.props.position.x - FIELD_DIMENSION / 2;
+    const y = this.props.position.y - FIELD_DIMENSION / 2;
     return (
-      <ImageBackground source={require('./assets/images/square9.png')} style={styles.field} />
+      <ImageBackground source={require('./assets/images/square9.png')} style={[styles.field, {left: x, top: y}]} />
     )
   }
 }
@@ -87,6 +89,7 @@ const styles = StyleSheet.create({
     zIndex: 2
   },
   field: {
+    position: "absolute",
     width: FIELD_DIMENSION, 
     height: FIELD_DIMENSION,
     zIndex: 1 
