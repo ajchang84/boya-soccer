@@ -1,0 +1,5 @@
+const RADIUS = 20;
+const FIELD_DIMENSION = 145;
+const STEP_SIZE = 46;
+
+export { RADIUS, FIELD_DIMENSION, STEP_SIZE };
