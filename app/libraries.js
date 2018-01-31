@@ -29,15 +29,15 @@ const attackTypes = [
         {vx: -2, vy: 0, x:WIDTH , y:HEIGHT / 2 - STEP_SIZE}
     ]
 const positions = [
-        {x:WIDTH / 2 - STEP_SIZE , y:HEIGHT / 2 + STEP_SIZE},
-        {x:WIDTH / 2 , y:HEIGHT / 2 + STEP_SIZE},
-        {x:WIDTH / 2 + STEP_SIZE , y:HEIGHT / 2 + STEP_SIZE},
-        {x:WIDTH / 2 - STEP_SIZE , y:HEIGHT / 2},
-        {x:WIDTH / 2 , y:HEIGHT / 2},
-        {x:WIDTH / 2 + STEP_SIZE , y:HEIGHT / 2},
-        {x:WIDTH / 2 - STEP_SIZE , y:HEIGHT / 2 - STEP_SIZE},
-        {x:WIDTH / 2 , y:HEIGHT / 2 - STEP_SIZE},
-        {x:WIDTH / 2 + STEP_SIZE , y:HEIGHT / 2 - STEP_SIZE},
+        {pos: 1, x:WIDTH / 2 - STEP_SIZE , y:HEIGHT / 2 - STEP_SIZE},
+        {pos: 2, x:WIDTH / 2 , y:HEIGHT / 2 - STEP_SIZE},
+        {pos: 3, x:WIDTH / 2 + STEP_SIZE , y:HEIGHT / 2 - STEP_SIZE},
+        {pos: 4, x:WIDTH / 2 - STEP_SIZE , y:HEIGHT / 2},
+        {pos: 5, x:WIDTH / 2 , y:HEIGHT / 2},
+        {pos: 6, x:WIDTH / 2 + STEP_SIZE , y:HEIGHT / 2},
+        {pos: 7, x:WIDTH / 2 - STEP_SIZE , y:HEIGHT / 2 + STEP_SIZE},
+        {pos: 8, x:WIDTH / 2 , y:HEIGHT / 2 + STEP_SIZE},
+        {pos: 9, x:WIDTH / 2 + STEP_SIZE , y:HEIGHT / 2 + STEP_SIZE},
     ]
 
 export { determineDirection, attackTypes, positions };

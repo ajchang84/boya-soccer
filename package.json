@@ -9,8 +9,10 @@
   "dependencies": {
     "matter-js": "^0.14.1",
     "react": "16.2.0",
-    "react-native": "0.52.0",
-    "react-native-game-engine": "^0.8.1",
+    "react-motion": "^0.5.2",
+    "react-native": "^0.50.3",
+    "react-native-blur": "^3.2.2",
+    "react-native-game-engine": "^0.8.9",
     "react-native-swipe-gestures": "^1.0.2",
     "react-navigation": "^1.0.0-beta.27"
   },

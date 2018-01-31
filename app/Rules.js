@@ -31,6 +31,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingTop: 53,
-    paddingHorizontal: 65
+    paddingHorizontal: 65,
+    backgroundColor: 'transparent'
   }
 });

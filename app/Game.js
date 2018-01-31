@@ -1,10 +1,10 @@
 import React, { PureComponent } from "react";
-import { StyleSheet, StatusBar, Text, Dimensions, ImageBackground, Modal, View, TouchableOpacity } from "react-native";
+import { StyleSheet, StatusBar, Text, Dimensions, ImageBackground, Modal, View, TouchableOpacity, AsyncStorage, TouchableWithoutFeedback, TouchableHighlight } from "react-native";
 import { GameEngine } from "react-native-game-engine";
+import { BlurView } from 'react-native-blur';
 import { Player, Field, Enemy, Score, YellowDiamond, PurpleDiamond } from "./renderers";
-import { Physics, MovePlayer, MoveEnemy, RemoveEnemy, CreateWave, DetectFailure } from "./systems";
-import GestureRecognizer, {swipeDirections} from 'react-native-swipe-gestures';
-import { RADIUS, FIELD_DIMENSION, STEP_SIZE } from "./constants";
+import { Physics, MovePlayer, MoveEnemy, RemoveEnemy, CreateWave, Interactions } from "./systems";
+import { RADIUS, STEP_SIZE } from "./constants";
 import Matter from "matter-js";
 
 Matter.Common.isElement = () => false; //-- Overriding this function because the original references HTMLElement
@@ -17,38 +17,57 @@ export default class Game extends PureComponent {
     this.state = {
       pause: false,
       modal: 'menu',
-      score: 0
+      score: 0,
+      highscore: true,
+      buttonSwap: false
     };
   }
 
   pauseGame() {
     this.setState({pause: true});
-    this.refs.gameEngine.stop()
+    this.refs.gameEngine.stop();
   }
 
   resumeGame() {
-    this.setState({pause: false, modal: 'menu'});
-    this.refs.gameEngine.start()
+    this.setState({pause: false, modal: 'menu', buttonSwap: false});
+    this.refs.gameEngine.start();
   }
-
-  endGame(score) {
-    this.setState({pause: true, modal: 'end', score});
-    this.refs.gameEngine.stop()
-  }
-
-  getState() {
-    return this.state;
+  eventHandler = (e) => {
+    if (e.type === "game-over") {
+      this.setState({pause: true, modal: 'end', score: e.score});
+      try {
+        AsyncStorage.getItem('@MySuperStore:score').then(value=>{
+          if (value == null) {
+            AsyncStorage.setItem('@MySuperStore:score', e.score.toString());
+            this.setState({highscore: true});
+          } else if (e.score > parseInt(value)) {
+            AsyncStorage.setItem('@MySuperStore:score', e.score.toString());
+            this.setState({highscore: true});
+          } else {
+            this.setState({highscore: false});
+          } 
+        })
+      } catch (error) {
+      }
+      this.refs.gameEngine.stop();
+    }
   }
 
   handleNavigations(routename) {
     if (routename === 'Home') {
+      this.setState({pause: false, modal: 'menu'});
       this.props.navigation.goBack()
-    } else {
-      this.props.navigation.navigate(routename)
+    } else if (routename === 'Game') {
       this.resumeGame();
+      this.refs.gameEngine.swap(this.initialEntity);
     }
   }
-
+  colorText() {
+    this.setState({buttonSwap: true});
+  }
+  resetText() {
+    this.setState({buttonSwap: false});
+  }
   showMenu() {
     const { modal } = this.state;
     if (modal === 'menu') {
@@ -56,9 +75,12 @@ export default class Game extends PureComponent {
         <View style={[styles.modalContainer, {paddingTop: 60}]}>
           <View style={styles.innerContainer}>
             <Text style={{color: '#fff', fontSize: 44, fontWeight: '800'}}>暂停</Text>
-            <TouchableOpacity style={{marginBottom: 56, marginTop: 60}} onPress={()=>this.resumeGame()}>
-              <ImageBackground style={{width: 76, height: 76}} source={require('./assets/images/play.png')} />
-            </TouchableOpacity>
+            <TouchableHighlight underlayColor={'transparent'} style={{marginBottom: 56, marginTop: 60}} onPress={()=>this.resumeGame()} onPressIn={()=>this.colorText()} onPressOut={()=>this.resetText()}>
+              {this.state.buttonSwap ? 
+                <ImageBackground style={{width: 76, height: 76}} source={require('./assets/images/playDone.png')} /> :
+                <ImageBackground style={{width: 76, height: 76}} source={require('./assets/images/play.png')} />
+              }
+            </TouchableHighlight>
             <TouchableOpacity style={{marginBottom: 10}} onPress={()=>this.setState({modal: 'restart'})}>
               <ImageBackground style={{width: 245, height: 60}} source={require('./assets/images/btn01Return.png')} />
             </TouchableOpacity>
@@ -73,7 +95,10 @@ export default class Game extends PureComponent {
         <View style={[styles.modalContainer, {paddingTop: 60}]}>
           <View style={styles.innerContainer}>
             <Text style={{color: '#fff', fontSize: 44, fontWeight: '800', marginBottom: 40}}>游戏结束</Text>
-            <ImageBackground style={{width: 340, height: 50}} source={require('./assets/images/iconFlag.png')} />
+            {this.state.highscore ?
+              <ImageBackground style={{width: 341, height: 51}} source={require('./assets/images/iconFlag.png')} /> :
+              <View style={{width: 340, height: 50}} />
+            }
             <Text style={{color: '#fff', fontSize: 124, fontWeight: 'bold', marginTop: 10, marginBottom: 60}}>{this.state.score.toLocaleString()}</Text>
             <TouchableOpacity style={{marginBottom: 20}} onPress={()=>this.handleNavigations('Game')}>
               <ImageBackground style={{width: 245, height: 60}} source={require('./assets/images/btn01Return.png')} />
@@ -96,7 +121,7 @@ export default class Game extends PureComponent {
               <Text style={{ color: '#fff', fontSize: 17, marginTop: 20 }}>重新开始会遗失当前分数</Text>
               <Text style={{ color: '#fff', fontSize: 17, marginTop: 5 }}>确认是否重新开始？</Text>
               <TouchableOpacity style={{marginTop: 13}} onPress={()=>this.handleNavigations('Game')}>
-                <ImageBackground style={{width: 39, height: 39}} source={require('./assets/images/iconCorrect.png')} />
+                <ImageBackground style={{width: 47, height: 40}} source={require('./assets/images/iconCorrect.png')} />
               </TouchableOpacity>
             </ImageBackground>
           </View>
@@ -114,13 +139,16 @@ export default class Game extends PureComponent {
               <Text style={{ color: '#fff', fontSize: 17, marginTop: 20 }}>回首页会遗失当前分数</Text>
               <Text style={{ color: '#fff', fontSize: 17, marginTop: 5 }}>确认是否重新开始？</Text>
               <TouchableOpacity style={{marginTop: 13}} onPress={()=>this.handleNavigations('Home')}>
-                <ImageBackground style={{width: 39, height: 39}} source={require('./assets/images/iconCorrect.png')} />
+                <ImageBackground style={{width: 47, height: 40}} source={require('./assets/images/iconCorrect.png')} />
               </TouchableOpacity>
             </ImageBackground>
           </View>
         </View>   
       );
     }
+  }
+  imageLoaded() {
+    this.setState({ viewRef: findNodeHandle(this.backgroundImage) });
   }
 
   render() {
@@ -134,31 +162,41 @@ export default class Game extends PureComponent {
 
     Matter.World.add(world, [player, yellowDiamond, purpleDiamond]);
 
+    this.initialEntity = 
+      {
+        physics: { engine: engine, world: world, },
+        gameSettings: { 
+          score: 0,
+          startGame: false,
+          renderer: <Score />
+        },
+
+        field: { position: {x: WIDTH / 2, y: HEIGHT / 2  }, renderer: <Field />},
+        player: { body: player, projectedMove: '', renderer: <Player />},
+        yellowDiamond: { body: yellowDiamond, points: 10, renderer: <YellowDiamond />},
+        purpleDiamond: { body: purpleDiamond, points: 30, renderer: <PurpleDiamond />},
+      }
+
     return (
       <ImageBackground style={{flex: 1}} source={require('./assets/images/ground.png')}>
         <GameEngine 
-          ref={"gameEngine"}
+          ref="gameEngine"
+          onEvent={this.eventHandler}
           style={styles.container} 
-          systems={[Physics, MovePlayer, DetectFailure, CreateWave, RemoveEnemy]}
-          entities={{
-            physics: { engine: engine, world: world, },
-            gameSettings: { 
-              score: 0,
-              endGame: this.endGame.bind(this), 
-              renderer: <Score />
-            },
-
-            field: { position: {x: WIDTH / 2, y: HEIGHT / 2  }, renderer: <Field />},
-            player: { body: player, projectedMove: '', renderer: <Player />},
-            yellowDiamond: { body: yellowDiamond, points: 10, renderer: <YellowDiamond />},
-            purpleDiamond: { body: purpleDiamond, points: 30, renderer: <PurpleDiamond />},
-          }}
-        >
+          systems={[Physics, MovePlayer, Interactions, CreateWave, RemoveEnemy]}
+          entities={this.initialEntity}
+          onLoadEnd={this.imageLoaded.bind(this)}
+          >
           <TouchableOpacity style={{position: 'absolute', right: 21, top: 26}} onPress={()=>this.pauseGame()}>
-            <ImageBackground style={{width: 40, height: 40}} source={require('./assets/images/rectangle4.png')} />
+            <ImageBackground style={{width: 40, height: 40}} source={require('./assets/images/paused.png')} />
           </TouchableOpacity>
           <StatusBar hidden={true} />
         </GameEngine>
+        <BlurView
+          style={[styles.absolute, {display: this.state.pause ? 'flex': 'none'}]}
+          blurType="dark"
+          blurAmount={2}        
+        />
         <Modal
           visible={this.state.pause}
           animationType={'fade'}
@@ -176,15 +214,14 @@ const styles = StyleSheet.create({
     flex: 1
   },
   modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)'
+    flex: 1
   },
   innerContainer: {
     alignItems: 'center',
   },
   popup: {
     width: 255, 
-    height: 240, 
+    height: 239, 
     paddingBottom: 16,
     paddingHorizontal: 25,
     alignItems: 'center',
@@ -194,5 +231,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 14,
     top: 56
+  },
+  absolute: {
+    position: "absolute",
+    top: 0, left: 0, bottom: 0, right: 0,
   }
 });

@@ -2,29 +2,34 @@ import { RADIUS, FIELD_DIMENSION, STEP_SIZE } from "./constants";
 import { Enemy, Box } from "./renderers";
 import Matter from "matter-js";
 import { Dimensions } from "react-native";
-import { determineDirection, attackTypes, positions } from './libraries'
+import { determineDirection, attackTypes, positions } from './libraries';
+import _ from 'lodash';
 
 const { width: WIDTH, height: HEIGHT } = Dimensions.get("window");
 
 let enemyIds = 0;
 let spawnTime = 3000;
 let cumulativeTime = 0;
+let score = 0;
+let prevYel = 1;
+let prevPur = 9;
+let enemies = 1;
 
 const Physics = (state, { touches, time }) => {
-  let engine = state["physics"].engine;
+  const engine = state["physics"].engine;
   Matter.Engine.update(engine, time.delta);
 	return state;
 };
 
 const MovePlayer = (entities, { touches }) => {
-  let move = touches.find(x => x.type === "move");
+  const move = touches.find(x => x.type === "move");
   if (move) {
     let player = entities['player'];
     if (!!!player.projectedMove) {
       player.projectedMove = determineDirection(move.delta.locationX, move.delta.locationY )
     }
   }
-  let end = touches.find(x => x.type === 'end');
+  const end = touches.find(x => x.type === 'end');
   if (end) {
     let player = entities['player'];
     let field = entities['field'];
@@ -55,38 +60,56 @@ const MovePlayer = (entities, { touches }) => {
   return entities;
 };
 
-const DetectFailure = (entities) => {
+const Interactions = (entities, { dispatch }) => {
   let engine = entities['physics'].engine;
   let player = entities['player'].body;
-  let world = entities["physics"].world;
   let yellowDiamond = entities['yellowDiamond'].body;
   let purpleDiamond = entities['purpleDiamond'].body;
-  let score = entities['gameSettings'].score;
-  Matter.Events.on(engine, 'collisionStart', function(event) {
-    var pairs = event.pairs;
-    if (pairs[0].bodyA === player || pairs[0].bodyB === player) {
-      if (pairs[0].bodyA === yellowDiamond || pairs[0].bodyB === yellowDiamond) {
-        entities['gameSettings'].score = score + entities['yellowDiamond'].points
-        let position = positions[Math.floor(Math.random() * 9)]
-        Matter.Body.setPosition(yellowDiamond, {x: position.x, y: position.y})
+  if (!entities['gameSettings'].gameStart) {
+    score = 0;
+    prevYel = 1;
+    prevPur = 9;
+    enemies = 1;
+
+    Matter.Events.on(engine, 'collisionStart', function(event) {
+      var pairs = event.pairs;
+      if (pairs[0].bodyA === player || pairs[0].bodyB === player) {
+        if (pairs[0].bodyA === yellowDiamond || pairs[0].bodyB === yellowDiamond) {
+          score += entities['yellowDiamond'].points;
+            let position = _.filter(positions, function(item){
+              return item.pos !== prevYel && item.pos !== prevPur;
+            })[Math.floor(Math.random() * 7)]
+            Matter.Body.setPosition(yellowDiamond, {x: position.x, y: position.y});
+            prevYel = position.pos;
+        }
+        else if (pairs[0].bodyA === purpleDiamond || pairs[0].bodyB === purpleDiamond) {
+          score += entities['purpleDiamond'].points;
+            let position = _.filter(positions, function(item){
+              return item.pos !== prevYel && item.pos !== prevPur;
+            })[Math.floor(Math.random() * 7)]
+            Matter.Body.setPosition(purpleDiamond, {x: position.x, y: position.y});
+            prevPur = position.pos;
+        }
+        else {
+          dispatch({type: 'game-over', score});
+        }
+
+        if (score > 1000) {
+          enemies = 3;
+        } else if ( score > 100) {
+          enemies = 2;
+        }
       }
-      else if (pairs[0].bodyA === purpleDiamond || pairs[0].bodyB === purpleDiamond) {
-        entities['gameSettings'].score = score + entities['purpleDiamond'].points
-        let position = positions[Math.floor(Math.random() * 9)]
-        Matter.Body.setPosition(purpleDiamond, {x: position.x, y: position.y})
-      }
-      else {
-        entities['gameSettings'].endGame(entities['gameSettings'].score)
-      }
-    }
-  });
+    });
+    entities['gameSettings'].gameStart = true;
+  }
+  entities['gameSettings'].score = score;
   return entities
 }
 
 const CreateWave = (entities, { time }) => {
   let world = entities['physics'].world;
   let engine = entities['physics'].engine;
-  let enemies = 1;
   if (cumulativeTime === 0) {
     cumulativeTime = 16
     for (let i = 0; i < enemies; i++) {
@@ -122,4 +145,4 @@ const RemoveEnemy = (entities, { screen }) => {
   return entities;
 }
  
-export { Physics, MovePlayer, RemoveEnemy, CreateWave, DetectFailure };
+export { Physics, MovePlayer, RemoveEnemy, CreateWave, Interactions };
