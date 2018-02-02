@@ -1,5 +1,5 @@
 import React, { PureComponent } from "react";
-import { StyleSheet, StatusBar, Text, Dimensions, ImageBackground, Modal, View, TouchableOpacity, AsyncStorage, TouchableWithoutFeedback, TouchableHighlight } from "react-native";
+import { StyleSheet, StatusBar, Text, Dimensions, ImageBackground, Modal, View, TouchableOpacity, AsyncStorage, TouchableWithoutFeedback, TouchableHighlight, findNodeHandle } from "react-native";
 import { GameEngine } from "react-native-game-engine";
 import { BlurView } from 'react-native-blur';
 import { Player, Field, Enemy, Score, YellowDiamond, PurpleDiamond } from "./renderers";
@@ -19,15 +19,17 @@ export default class Game extends PureComponent {
       modal: 'menu',
       score: 0,
       highscore: true,
-      buttonSwap: false
+      buttonSwap: false,
+      pausedBlurViewRef: null
     };
   }
-
+  componentDidMount() {
+    this.setState({ pausedBlurViewRef: findNodeHandle(this.pausedBlurViewRef) });
+  }
   pauseGame() {
     this.setState({pause: true});
     this.refs.gameEngine.stop();
   }
-
   resumeGame() {
     this.setState({pause: false, modal: 'menu', buttonSwap: false});
     this.refs.gameEngine.start();
@@ -179,23 +181,25 @@ export default class Game extends PureComponent {
 
     return (
       <ImageBackground style={{flex: 1}} source={require('./assets/images/ground.png')}>
-        <GameEngine 
-          ref="gameEngine"
-          onEvent={this.eventHandler}
-          style={styles.container} 
-          systems={[Physics, MovePlayer, Interactions, CreateWave, RemoveEnemy]}
-          entities={this.initialEntity}
-          onLoadEnd={this.imageLoaded.bind(this)}
-          >
-          <TouchableOpacity style={{position: 'absolute', right: 21, top: 26}} onPress={()=>this.pauseGame()}>
+        <View style={{flex: 1, backgroundColor: 'transparent'}} ref={(container) => { this.pausedBlurViewRef = container; }}>
+          <GameEngine 
+              ref="gameEngine"
+              onEvent={this.eventHandler}
+              style={styles.container} 
+              systems={[Physics, MovePlayer, Interactions, CreateWave, RemoveEnemy]}
+              entities={this.initialEntity}
+            >
+            <TouchableOpacity style={{position: 'absolute', right: 21, top: 26}} onPress={()=>this.pauseGame()}>
             <ImageBackground style={{width: 40, height: 40}} source={require('./assets/images/paused.png')} />
-          </TouchableOpacity>
-          <StatusBar hidden={true} />
-        </GameEngine>
+            </TouchableOpacity>
+            <StatusBar hidden={true} />
+            </GameEngine>
+        </View>
         <BlurView
           style={[styles.absolute, {display: this.state.pause ? 'flex': 'none'}]}
           blurType="dark"
-          blurAmount={2}        
+          blurAmount={2}    
+          viewRef={this.state.pausedBlurViewRef}
         />
         <Modal
           visible={this.state.pause}
