@@ -6,6 +6,7 @@ import { determineDirection, attackTypes, positions } from './libraries';
 import _ from 'lodash';
 
 const { width: WIDTH, height: HEIGHT } = Dimensions.get("window");
+const moveDirection = {start: {x: 0, y:0}, end: {x: 0, y:0}};
 
 let enemyIds = 0;
 let spawnTime = 3000;
@@ -22,40 +23,52 @@ const Physics = (state, { touches, time }) => {
 };
 
 const MovePlayer = (entities, { touches }) => {
-  const move = touches.find(x => x.type === "move");
-  if (move) {
-    let player = entities['player'];
-    if (!!!player.projectedMove) {
-      player.projectedMove = determineDirection(move.delta.locationX, move.delta.locationY )
-    }
+  const constraint = entities["physics"].constraint;
+  const player = entities['player'].body;
+  const field = entities['field'];
+  const { start, end } = moveDirection;
+ 
+  const startEvent = (touches.find(x => x.type === "start") || {}).event;
+  if (startEvent) {
+   start.x = startEvent.pageX;
+   start.y = startEvent.pageY;
   }
-  const end = touches.find(x => x.type === 'end');
-  if (end) {
-    let player = entities['player'];
-    let field = entities['field'];
-    switch(player.projectedMove) {
-      case 'RIGHT':
-        if (player.body.position.x + STEP_SIZE < field.position.x + FIELD_DIMENSION / 2) {
-          Matter.Body.setPosition(player.body, {x: player.body.position.x + STEP_SIZE, y: player.body.position.y})
-        }
-        break;
-      case 'LEFT':
-        if (player.body.position.x - STEP_SIZE > field.position.x - FIELD_DIMENSION / 2) {
-          Matter.Body.setPosition(player.body, {x: player.body.position.x - STEP_SIZE, y: player.body.position.y})
-        }
-        break;
-      case 'UP':
-        if (player.body.position.y - STEP_SIZE > field.position.y - FIELD_DIMENSION / 2) {
-          Matter.Body.setPosition(player.body, {x: player.body.position.x, y: player.body.position.y - STEP_SIZE})
-        }
-        break;
-      case 'DOWN':
-        if (player.body.position.y + STEP_SIZE < field.position.y + FIELD_DIMENSION / 2) {
-          Matter.Body.setPosition(player.body, {x: player.body.position.x, y: player.body.position.y + STEP_SIZE})
-        }
-        break;
+  const endEvent = (touches.find(x => x.type === "end") || {}).event;
+  if (endEvent) {
+   end.x = endEvent.pageX;
+   end.y = endEvent.pageY;
+
+   if (start.x != end.x && start.y != end.y) {
+    let move = {
+     x: 0,
+     y: 0
+    };
+    switch (determineDirection(end.x - start.x, end.y - start.y)) {
+     case 'UP':
+      move.y = -1 * STEP_SIZE;
+      break;
+     case 'DOWN':
+      move.y = STEP_SIZE;
+      break;
+     case 'LEFT':
+      move.x = -1 * STEP_SIZE;
+      break;
+     case 'RIGHT':
+      move.x = STEP_SIZE;
+      break;
     }
-    player.projectedMove = '';    
+    
+    const nextPosition = {
+     x: player.position.x + move.x,
+     y: player.position.y + move.y,
+    }
+    if (nextPosition.x < field.position.x + FIELD_DIMENSION / 2 && nextPosition.x > field.position.x - FIELD_DIMENSION / 2 && nextPosition.y > field.position.y - FIELD_DIMENSION / 2 && nextPosition.y < field.position.y + FIELD_DIMENSION / 2) {
+     Matter.Body.setPosition(player, {
+      ...nextPosition
+     });
+    }
+   }
+ 
   }
   return entities;
 };
@@ -104,7 +117,7 @@ const Interactions = (entities, { dispatch }) => {
     entities['gameSettings'].gameStart = true;
   }
   entities['gameSettings'].score = score;
-  return entities
+  return entities;
 }
 
 const CreateWave = (entities, { time }) => {
