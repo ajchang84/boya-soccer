@@ -6,6 +6,7 @@ import { Player, Field, Enemy, Score, YellowDiamond, PurpleDiamond } from "./ren
 import { Physics, MovePlayer, MoveEnemy, RemoveEnemy, CreateWave, Interactions } from "./systems";
 import { RADIUS, STEP_SIZE } from "./constants";
 import Matter from "matter-js";
+import GestureRecognizer, {swipeDirections} from 'react-native-swipe-gestures';
 
 Matter.Common.isElement = () => false; //-- Overriding this function because the original references HTMLElement
 
@@ -149,9 +150,6 @@ export default class Game extends PureComponent {
       );
     }
   }
-  imageLoaded() {
-    this.setState({ viewRef: findNodeHandle(this.backgroundImage) });
-  }
 
   render() {
     const engine = Matter.Engine.create({ enableSleeping: false });
@@ -193,12 +191,12 @@ export default class Game extends PureComponent {
             <ImageBackground style={{width: 40, height: 40}} source={require('./assets/images/paused.png')} />
             </TouchableOpacity>
             <StatusBar hidden={true} />
-            </GameEngine>
+          </GameEngine>
         </View>
         <BlurView
           style={[styles.absolute, {display: this.state.pause ? 'flex': 'none'}]}
           blurType="dark"
-          blurAmount={2}    
+          blurAmount={10}    
           viewRef={this.state.pausedBlurViewRef}
         />
         <Modal

@@ -16,12 +16,12 @@ export default class Home extends PureComponent {
     return (
       <ImageBackground style={{flex: 1}} source={require('./assets/images/homepage.png')}>
         <View style={styles.container}>
-            <TouchableOpacity style={{marginBottom: 10}} onPress={()=>this.handleNavigations('Game')}>
-                <ImageBackground style={{width: 245, height: 60}} source={require('./assets/images/btn01Start.png')} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={()=>this.handleNavigations('Rules')}>
-                <ImageBackground style={{width: 245, height: 60}} source={require('./assets/images/btn01Teach.png')} />
-            </TouchableOpacity>
+          <TouchableOpacity style={{marginBottom: 10}} onPress={()=>this.handleNavigations('Game')}>
+            <ImageBackground style={{width: 245, height: 60}} source={require('./assets/images/btn01Start.png')} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={()=>this.handleNavigations('Rules')}>
+            <ImageBackground style={{width: 245, height: 60}} source={require('./assets/images/btn01Teach.png')} />
+          </TouchableOpacity>
         </View>
         <StatusBar hidden={true} />
       </ImageBackground>
